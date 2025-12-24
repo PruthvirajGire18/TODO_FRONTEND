@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../api"; // ✅ use your axios instance instead of axios
+import api from "../api";
 
 const AppContext = createContext();
 
@@ -9,10 +9,10 @@ export const AppProvider = ({ children }) => {
   const [task, setTask] = useState("");
   const [tasks, setTasks] = useState([]);
 
-  // ✅ Fetch all tasks
+  // ✅ Fetch logged-in user's tasks
   const fetchTasks = async () => {
     try {
-      const res = await api.get(`/task/get-tasks/${userId}`);
+      const res = await api.get("/task/get-tasks"); // ❌ no userId
       setTasks(res.data);
     } catch (error) {
       console.error("Error fetching tasks:", error);
@@ -20,16 +20,16 @@ export const AppProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    fetchTasks(); // load tasks when component mounts
+    fetchTasks();
   }, []);
 
-  // ✅ Add new task
+  // ✅ Add task
   const handleAddTask = async (e) => {
     e.preventDefault();
-    if (task.trim() === "") return;
+    if (!task.trim()) return;
+
     try {
-      const res = await api.post("/task/add-task", { task,userId });
-      alert(res.data.message);
+      const res = await api.post("/task/add-task", { task }); // ❌ no userId
       setTask("");
       fetchTasks();
     } catch (error) {
@@ -37,24 +37,22 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  // ✅ Toggle completion
+  // ✅ Toggle complete
   const handleToggleComplete = async (id, currentStatus) => {
     try {
-      const res = await api.put(`/task/update-task/${id}`, {
+      await api.put(`/task/update-task/${id}`, {
         completed: !currentStatus,
       });
-      console.log(res.data.message);
       fetchTasks();
     } catch (error) {
       console.error("Error updating task:", error);
     }
   };
 
-  // ✅ Delete a task
+  // ✅ Delete task
   const handleDelete = async (id) => {
     try {
-      const res = await api.delete(`/task/del-task/${id}`);
-      alert(res.data.message);
+      await api.delete(`/task/del-task/${id}`);
       fetchTasks();
     } catch (error) {
       console.error("Error deleting task:", error);
@@ -68,7 +66,6 @@ export const AppProvider = ({ children }) => {
         task,
         setTask,
         tasks,
-        setTasks,
         handleAddTask,
         handleToggleComplete,
         handleDelete,
