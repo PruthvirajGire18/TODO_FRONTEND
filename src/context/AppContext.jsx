@@ -12,7 +12,7 @@ export const AppProvider = ({ children }) => {
   // ✅ Fetch all tasks
   const fetchTasks = async () => {
     try {
-      const res = await api.get("/task/get-tasks");
+      const res = await api.get(`/task/get-tasks/${userId}`);
       setTasks(res.data);
     } catch (error) {
       console.error("Error fetching tasks:", error);
@@ -28,7 +28,7 @@ export const AppProvider = ({ children }) => {
     e.preventDefault();
     if (task.trim() === "") return;
     try {
-      const res = await api.post("/task/add-task", { task });
+      const res = await api.post("/task/add-task", { task,userId });
       alert(res.data.message);
       setTask("");
       fetchTasks();
