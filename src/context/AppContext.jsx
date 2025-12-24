@@ -1,21 +1,29 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext,useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api";
 
 const AppContext = createContext();
 
 export const AppProvider = ({ children }) => {
-  const navigate = useNavigate();
   const [task, setTask] = useState("");
   const [tasks, setTasks] = useState([]);
+  const navigate = useNavigate();
 
-  // ✅ Fetch logged-in user's tasks
+  const user = JSON.parse(localStorage.getItem("user"));
+
+  // 🚨 GUARD
+  if (!user || !user.id) {
+    console.error("User not found in localStorage");
+  }
+
   const fetchTasks = async () => {
+    if (!user?.id) return;
+
     try {
-      const res = await api.get("/task/get-tasks"); // ❌ no userId
+      const res = await api.get(`/task/get-tasks/${user.id}`);
       setTasks(res.data);
-    } catch (error) {
-      console.error("Error fetching tasks:", error);
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -23,52 +31,44 @@ export const AppProvider = ({ children }) => {
     fetchTasks();
   }, []);
 
-  // ✅ Add task
   const handleAddTask = async (e) => {
     e.preventDefault();
-    if (!task.trim()) return;
+    if (!task.trim() || !user?.id) return;
 
     try {
-      const res = await api.post("/task/add-task", { task }); // ❌ no userId
+      await api.post("/task/add-task", {
+        task,
+        userId: user.id,
+      });
       setTask("");
       fetchTasks();
-    } catch (error) {
-      console.error("Error adding task:", error);
+    } catch (err) {
+      console.error(err);
     }
   };
 
-  // ✅ Toggle complete
-  const handleToggleComplete = async (id, currentStatus) => {
-    try {
-      await api.put(`/task/update-task/${id}`, {
-        completed: !currentStatus,
-      });
-      fetchTasks();
-    } catch (error) {
-      console.error("Error updating task:", error);
-    }
+  const handleToggleComplete = async (id, completed) => {
+    await api.put(`/task/update-task/${id}`, {
+      completed: !completed,
+    });
+    fetchTasks();
   };
 
-  // ✅ Delete task
   const handleDelete = async (id) => {
-    try {
-      await api.delete(`/task/del-task/${id}`);
-      fetchTasks();
-    } catch (error) {
-      console.error("Error deleting task:", error);
-    }
+    await api.delete(`/task/del-task/${id}`);
+    fetchTasks();
   };
 
   return (
     <AppContext.Provider
       value={{
-        navigate,
         task,
         setTask,
         tasks,
         handleAddTask,
         handleToggleComplete,
         handleDelete,
+        navigate,
       }}
     >
       {children}
